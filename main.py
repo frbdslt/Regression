@@ -17,48 +17,31 @@ def rmse(y_true, y_pred):
 def main():
     print("=== Battery Temperature Predictor (Linear vs Polynomial) ===")
 
-    # 1) Load Data
     data_path = "data/battery_data.csv"
-    print(f"[1/5] Loading dataset from {data_path} ...")
     df = pd.read_csv(data_path, sep=";", encoding="latin1")
 
-    # 2) Prepare and Split
     X, y = PrepareData(df)
     X_train, X_test, y_train, y_test = TrainTestSplit(X, y, test_ratio=0.2, seed=42)
 
-    # 3) Standardize features using TRAIN stats only
-    print("[2/5] Standardizing features (Z-score) ...")
     X_train_norm, mean, std = StandardizeFeatures(X_train)
     X_test_norm = (X_test - mean) / std
 
-    # 4) Train Linear
-    print("[3/5] Training Linear Regression (GD) ...")
     lin_model = LinearRegression(learning_rate=0.05, iterations=2000)
     lin_model.fit(X_train_norm, y_train)
     y_pred_lin = lin_model.predict(X_test_norm)
     rmse_lin = rmse(y_test, y_pred_lin)
 
-    # 5) Train Polynomial (degree=2)
-    print("[4/5] Training Polynomial Regression (degree=2) ...")
     poly_model = PolynomialRegressionScratch(degree=2, learning_rate=0.05, iterations=2000)
     poly_model.fit(X_train_norm, y_train)
     y_pred_poly = poly_model.predict(X_test_norm)
     rmse_poly = rmse(y_test, y_pred_poly)
 
-    print("\n--- Model Comparison ---")
-    print(f"Linear RMSE     : {rmse_lin:.4f} °C")
-    print(f"Polynomial RMSE : {rmse_poly:.4f} °C\n")
-
-    # ------------------------------------------------------------
-    # Dashboard Layout
-    # ------------------------------------------------------------
     fig = plt.figure(figsize=(13.5, 7.5))
     plt.subplots_adjust(bottom=0.32, wspace=0.25)
 
     ax1 = fig.add_subplot(1, 2, 1)
     ax2 = fig.add_subplot(1, 2, 2)
 
-    # 1) Convergence Plot (Both Models)
     ax1.plot(
         range(len(lin_model.cost_history)),
         lin_model.cost_history,
@@ -80,7 +63,6 @@ def main():
     ax1.grid(True, linestyle="--", alpha=0.5)
     ax1.legend()
 
-    # 2) Actual vs Predicted (Both Models on same plot)
     y_test_flat = y_test.reshape(-1)
     ax2.scatter(
         y_test_flat, y_pred_lin.reshape(-1),
@@ -103,9 +85,6 @@ def main():
     ax2.grid(True, linestyle="--", alpha=0.5)
     ax2.legend(loc="upper left")
 
-    # ------------------------------------------------------------
-    # Widgets (Inputs)
-    # ------------------------------------------------------------
     default_v = f"{mean[0]:.1f}"
     default_i = f"{mean[1]:.1f}"
     default_a = f"{mean[2]:.1f}"
@@ -123,11 +102,9 @@ def main():
     ax_t = plt.axes([0.74, 0.18, 0.14, 0.06])
     tb_t = TextBox(ax_t, "Time [s]: ", initial=default_t)
 
-    # Button predict
     ax_btn = plt.axes([0.40, 0.06, 0.20, 0.07])
     btn = Button(ax_btn, "Predict Both", color="lightgreen", hovercolor="0.85")
 
-    # Result text showing both predictions side by side
     result_text = fig.text(
         0.75, 0.09,
         "Predictions -- Linear: -- °C | Poly: -- °C",
@@ -157,7 +134,6 @@ def main():
 
     btn.on_clicked(on_predict)
 
-    # initial prediction calculation
     on_predict(None)
 
     plt.show()
